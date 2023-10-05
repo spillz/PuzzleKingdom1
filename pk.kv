@@ -1,0 +1,276 @@
+#:kivy 1.8
+
+#:import tile_face_size helpers.tile_face_size
+#:import pr helpers.pr
+#:import game_bg_color helpers.game_bg_color
+#:import menu_bg_color helpers.menu_bg_color
+#:import red helpers.red
+#:import green helpers.green
+#:import blue helpers.blue
+#:import yellow helpers.yellow
+#:import purple helpers.purple
+#:import terrain_color helpers.terrain_color
+#:import terrain_border_color helpers.terrain_border_color
+#:import SlideTransition kivy.uix.screenmanager.SlideTransition
+
+
+<Tile>:
+    value: 1
+    size_hint: (None, None)
+
+<TerrainHex>:
+    size_hint: (None, None)
+    hex_width: self.size[0]
+    hex_len: self.size[0]/2
+    hex_height: self.hex_len*(3**0.5)
+
+<LevelHex>:
+    source_id: 'tiles/terrain_plain.png'
+    level_id: '1'
+    Image:
+        size: root.size
+        pos: root.pos
+        source: root.source_id
+        allow_stretch: True
+    Label:
+        size: root.size
+        pos: root.pos
+        font_size: root.size[0]/2
+        text: root.level_id
+
+<PlayerScore>:
+    ident: 'I'
+    color: [0.0,1.0,0.0,1.0]
+    score: 0
+    active_turn: False
+    size_hint: (None, None)
+    size: (60, 80)
+    pos: (0,0)
+    center_score: self.center_y + (self.size[1] - self.size[0])/2
+    tri_height: 0.9*(self.size[1] - self.size[0])
+    hex_len: self.size[0]/2
+    hex_height: self.hex_len*(3**0.5)
+    canvas:
+        Color:
+            rgba: self.color
+        Triangle:
+            points: [0,0,0,0,0,0] if self.active_turn==False else [self.x,self.y, self.right,self.y, self.center_x,self.y + self.tri_height]
+    Label:
+        size_hint: (None, None)
+        id: label_text
+        halign: 'center'
+        center: (root.center_x, root.center_score)
+        font_size: root.size[0]/2
+        size: root.size[0]/2, root.size[0]/2
+        text: str(root.score)
+        color: root.color
+
+<StatusLabel>:
+    bg_color: [0.0, 0.0, 0.0, 1.0]
+    size_hint: (None, None)
+    size: self.texture_size
+    halign: 'right'
+    canvas.before:
+        Color:
+            rgba: self.bg_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+<Board>:
+    board_hex_count: 7
+    canvas.before:
+        Color:
+            rgba: game_bg_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+<GameOver>:
+    auto_dismiss: False
+    size_hint: (None, None)
+    title: 'Game Over'
+    winner_names: ['Thomas']
+    BoxLayout:
+        padding: [0.1*root.size[0], 0.1*root.size[1], 0.1*root.size[0], 0.1*root.size[1]]
+        spacing: 0.1*root.size[1]
+        orientation: 'vertical'
+        Label:
+            text: root.winner_names[0]+' wins!' if len(root.winner_names)==1 else 'Draw!'
+        BoxLayout:
+            spacing: 0.1*root.size[0]
+            orientation: 'horizontal'
+            Button:
+                on_press: root.on_exit()
+                text: 'Exit'
+            Button:
+                on_press: root.on_replay()
+                text: 'Play again'
+
+
+<PlayerCountChooser@BoxLayout>:
+    orientation: 'horizontal'
+    group_id: 'count'
+    value: 2*two.active + 3*three.active + 4*four.active + 5*five.active
+    CheckBox:
+        id: two
+        group: root.group_id
+        active: True
+    Label:
+        text: '2'
+        on_touch_up: if self.collide_point( *args[1].pos): two.active, three.active, four.active, five.active = True, False, False, False
+    CheckBox:
+        id: three
+        group: root.group_id
+    Label:
+        text: '3'
+        on_touch_up: if self.collide_point( *args[1].pos): two.active, three.active, four.active, five.active = False, True, False, False
+    CheckBox:
+        id: four
+        group: root.group_id
+    Label:
+        text: '4'
+        on_touch_up: if self.collide_point( *args[1].pos): two.active, three.active, four.active, five.active = False, False, True, False
+    CheckBox:
+        id: five
+        group: root.group_id
+    Label:
+        text: '5'
+        on_touch_up: if self.collide_point( *args[1].pos): two.active, three.active, four.active, five.active = False, False, False, True
+
+<PlayerLabel@RelativeLayout>:
+    orientation: 'horizontal'
+    text: ''
+    color: [0.0, 0.0, 0.0, 1.0]
+    value: 1
+    Label:
+        halign: 'left'
+        size_hint: [None, 0.75]
+        pos_hint: {'center_y': 0.5, 'x': 0.0}
+        text: root.text
+        size: self.texture_size
+
+
+<PlayerChooser@BoxLayout>:
+    orientation: 'horizontal'
+    group_id: 'player1'
+    value: 1*computer.active + 2*network.active
+    CheckBox:
+        id: human
+        group: root.group_id
+        active: True
+    Label:
+        text: 'Human'
+        on_touch_up: if self.collide_point( *args[1].pos): human.active, computer.active, network.active = True, False, False
+    CheckBox:
+        id: computer
+        group: root.group_id
+    Label:
+        text: 'Computer'
+        on_touch_up: if self.collide_point( *args[1].pos): human.active, computer.active, network.active = False, True, False
+    CheckBox:
+        id: network
+        group: root.group_id
+    Label:
+        text: 'Net Player'
+        on_touch_up: if self.collide_point( *args[1].pos): human.active, computer.active, network.active = False, False, True
+
+<GameMenu>:
+    w_game: game
+    w_singleplayer: singleplayer
+    transition: SlideTransition(direction = 'down')
+    canvas.before:
+        Color:
+            rgba: menu_bg_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    Screen:
+        name: 'main'
+        RelativeLayout:
+            Widget:
+                size_hint: (0.8, 0.4)
+                pos_hint: {'center_x':0.5, 'center_y':0.65}
+                hex_width: min(self.size[0], self.size[1])
+                hex_len: self.hex_width/2
+                hex_height: self.hex_len*(3**0.5)
+                canvas:
+                    #hex is comprised of six triangles
+                    Color:
+                        rgba: terrain_color
+                    #top
+                    Triangle:
+                        points: [] if self.hex_len is None else [self.center_x, self.center_y, self.center_x - self.hex_len/2, self.center_y - self.hex_height/2, self.center_x + self.hex_len/2, self.center_y - self.hex_height/2]
+                    #topright
+                    Triangle:
+                        points: [] if self.hex_len is None else [self.center_x, self.center_y, self.center_x + self.hex_len/2, self.center_y - self.hex_height/2, self.center_x + self.hex_len, self.center_y]
+                    #bottomright
+                    Triangle:
+                        points: [] if self.hex_len is None else [self.center_x, self.center_y, self.center_x + self.hex_len, self.center_y, self.center_x + self.hex_len/2, self.center_y + self.hex_height/2]
+                    #bottom
+                    Triangle:
+                        points: [] if self.hex_len is None else [self.center_x, self.center_y, self.center_x + self.hex_len/2, self.center_y + self.hex_height/2, self.center_x - self.hex_len/2, self.center_y + self.hex_height/2]
+                    #bottomleft
+                    Triangle:
+                        points: [] if self.hex_len is None else [self.center_x, self.center_y, self.center_x - self.hex_len/2, self.center_y + self.hex_height/2, self.center_x - self.hex_len, self.center_y]
+                    #topleft
+                    Triangle:
+                        points: [] if self.hex_len is None else [self.center_x, self.center_y, self.center_x - self.hex_len, self.center_y, self.center_x - self.hex_len/2, self.center_y - self.hex_height/2]
+                    #border
+                    Color:
+                        rgba: terrain_border_color
+                    Line:
+                        points: [] if self.hex_len is None else [ self.center_x - self.hex_len/2, self.center_y - self.hex_height/2, self.center_x + self.hex_len/2, self.center_y - self.hex_height/2, self.center_x + self.hex_len, self.center_y, self.center_x + self.hex_len/2, self.center_y + self.hex_height/2, self.center_x - self.hex_len/2, self.center_y + self.hex_height/2, self.center_x - self.hex_len, self.center_y, self.center_x - self.hex_len/2, self.center_y - self.hex_height/2 ]
+            Label:
+                size_hint: (0.4, 0.4)
+                pos_hint: {'center_x':0.5, 'center_y':0.65}
+                halign: 'center'
+                font_size: 1 if self.center_x is None else 0.2*self.size[0]
+                text: "PK"
+                color: (0.8, 0.8, 0.8, 1.0)
+            BoxLayout:
+                size_hint: [0.5, 0.2]
+                pos_hint: {'center_x':0.5, 'y':0.1}
+                orientation: 'vertical'
+                Button:
+                    size: [0.5*root.size[0], 0.15*root.size[1]]
+                    text: 'Singleplayer'
+                    on_press: root.current ='singleplayer'
+    Screen:
+        name: 'singleplayer'
+        id: singleplayer
+        RelativeLayout:
+            BoxLayout:
+                size_hint: [0.5, 0.2]
+                pos_hint: {'center_x':0.5, 'y':0.1}
+                orientation: 'vertical'
+                Button:
+                    size: [0.5*root.size[0], 0.15*root.size[1]]
+                    text: 'Back'
+                    on_press: root.current = 'main'
+    Screen:
+        name: 'pause'
+        RelativeLayout:
+            Label:
+                text: 'Paused'
+                font_size: 0.2*root.size[1]
+                pos_hint: {'center_x':0.5, 'center_y':0.8}
+                size_hint: (0.4,0.2)
+            Button:
+                text: 'Back to game'
+                size_hint: (0.4, 0.1)
+                pos_hint: {'center_x':0.5, 'center_y':0.5}
+                on_press: root.current = 'game'
+            Button:
+                size_hint: (0.4, 0.1)
+                text: 'Restart game'
+                pos_hint: {'center_x':0.5, 'center_y':0.4}
+                on_press: root.restart_game()
+            Button:
+                size_hint: (0.4, 0.1)
+                text: 'Exit to menu'
+                pos_hint: {'center_x':0.5, 'center_y':0.3}
+                on_press: root.current = 'main'
+    Screen:
+        name: 'game'
+        id: game

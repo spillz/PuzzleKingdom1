@@ -1,0 +1,3 @@
+title=Puzzle Kingdom
+author=
+orientation=landscape
